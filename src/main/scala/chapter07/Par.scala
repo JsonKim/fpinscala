@@ -1,24 +1,46 @@
 package chapter07
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.Callable
 
 object Par {
-  case class Par[A](value: A)
+  type Par[A] = ExecutorService => Future[A]
 
   // 즉시 평가되어서 결과 a를 산출하는 계산을 생성.
   // 상수 값을 병렬 계산으로 승격
-  def unit[A](a: A): Par[A] = Par(a)
+  def unit[A](a: A): Par[A] = (es: ExecutorService) => UnitFuture(a)
   // run이 동시적으로 평가할 표현식 a를 감싼다
   // 평가 되지 않은 인수를 Par로 감싸고 병렬 평가 대상으로 표시
   def lazyUnit[A](a: => A): Par[A] = fork(unit(a))
 
+  // 상수 값을 그대로 돌려줄 수 있는 Future의 구현
+  private case class UnitFuture[A](get: A) extends Future[A] {
+    def isDone(): Boolean = true
+    def get(timeout: Long, unit: TimeUnit): A = get
+    def isCancelled(): Boolean = false
+    def cancel(mayInterruptIfRunning: Boolean): Boolean = false
+  }
+
   // 주어진 Par를 fork의 요청에 따라 병렬 계산을 수행하고 그 결과값을 추출함으로써 완전히 평가
   // 계산의 실제 실행
-  def run[A](a: Par[A]): A = a.value
+  def run[A](s: ExecutorService)(a: Par[A]): Future[A] = a(s)
 
   // 두 병렬 계산의 결과들을 이항 함수로 조합
-  def map2[A,B,C](a: Par[A], b: Par[B])(f: (A, B) => C): Par[C] = unit(f(run(a), run(b)))
+  // 병렬성 제어는 오직 fork함수만 담당한다는 설계상의 선택에 의해 f호출을 개별 논리적 쓰레드에서 평가하지 않는다.
+  // f를 개별 쓰레드에서 평가하고 싶다면 fork(map2(a,b)(f)) 를 사용한다.
+  def map2[A,B,C](a: Par[A], b: Par[B])(f: (A, B) => C): Par[C] =
+    (es: ExecutorService) => {
+      val af = a(es)
+      val bf = b(es)
+      UnitFuture(f(af.get, bf.get))
+    }
 
   // 이후에 run이 동시적으로 평가할 계산임을 표시. run에 강제 되어야 실제로 평가
-  def fork[A](a: => Par[A]): Par[A] = a
+  def fork[A](a: => Par[A]): Par[A] =
+    es => es.submit(new Callable[A] {
+      def call = a(es).get
+    })
 }
 
 object Examples {
@@ -29,16 +51,6 @@ object Examples {
     else { 
       val (l,r) = ints.splitAt(ints.length/2) // Divide the sequence in half using the `splitAt` function.
       sum(l) + sum(r) // Recursively sum both halves and add the results together.
-    }
-
-  def sum_1(ints: IndexedSeq[Int]): Int =
-    if (ints.size <= 1)
-      ints.headOption getOrElse 0
-    else {
-      val (l, r) = ints.splitAt(ints.length / 2)
-      val sumL: Par[Int] = unit(sum(l))
-      val sumR: Par[Int] = unit(sum(r))
-      run(sumL) + run(sumR)
     }
 
   def sum_2(ints: IndexedSeq[Int]): Par[Int] =
@@ -54,6 +66,6 @@ object Examples {
       unit(ints.headOption getOrElse 0)
     else {
       val (l, r) = ints.splitAt(ints.length / 2)
-      map2(fork(sum_2(l)), fork(sum_2(r)))(_ + _)
+      map2(fork(sum_3(l)), fork(sum_3(r)))(_ + _)
     }
 }
