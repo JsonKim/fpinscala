@@ -6,9 +6,9 @@ object Par {
   def unit[A](a: A): Par[A] = Par(a)
   def lazyUnit[A](a: => A): Par[A] = fork(unit(a))
 
-  def get[A](a: Par[A]): A = a.value
+  def run[A](a: Par[A]): A = a.value
 
-  def map2[A,B,C](a: Par[A], b: Par[B])(f: (A, B) => C): Par[C] = unit(f(get(a), get(b)))
+  def map2[A,B,C](a: Par[A], b: Par[B])(f: (A, B) => C): Par[C] = unit(f(run(a), run(b)))
 
   def fork[A](a: => Par[A]): Par[A] = a
 }
@@ -30,7 +30,7 @@ object Examples {
       val (l, r) = ints.splitAt(ints.length / 2)
       val sumL: Par[Int] = unit(sum(l))
       val sumR: Par[Int] = unit(sum(r))
-      get(sumL) + get(sumR)
+      run(sumL) + run(sumR)
     }
 
   def sum_2(ints: IndexedSeq[Int]): Par[Int] =
