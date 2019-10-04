@@ -59,6 +59,11 @@ object Par {
     }
   }
 
+  // map은 map2로 구현 가능하나 반대는 불가능하다.
+  // 이것은 map2가 map보다 더 강력하고 근본적인 기본수단임을 의미한다.
+  def map[A,B](pa: Par[A])(f: A => B): Par[B] =
+    map2(pa, unit(()))((a, _) => f(a))
+
   // 이후에 run이 동시적으로 평가할 계산임을 표시. run에 강제 되어야 실제로 평가
   def fork[A](a: => Par[A]): Par[A] =
     es => es.submit(new Callable[A] {
