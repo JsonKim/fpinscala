@@ -102,6 +102,17 @@ object Par {
     val pars: List[Par[List[A]]] = ps map asyncF((a: A) => if (p(a)) List(a) else Nil)
     map(sequence(pars))(_.flatten)
   }
+
+  def map3[A,B,C,R](pa: Par[A], pb: Par[B], pc: Par[C])(f: (A, B, C) => R): Par[R] = {
+    val ab = map2(pa, pb)((a, b) => (c: C) => f(a, b, c))
+    map2(ab, pc)((fc, c) => fc(c))
+  }
+
+  def map4[A,B,C,D,R](pa: Par[A], pb: Par[B], pc: Par[C], pd: Par[D])(f: (A, B, C, D) => R): Par[R] = {
+    val ab = map2(pa, pb)((a, b) => (c: C) => (d: D) => f(a, b, c, d))
+    val abc = map2(ab, pc)((fc, c) => fc(c))
+    map2(abc, pd)((fd, d) => fd(d))
+  }
 }
 
 object Examples {
