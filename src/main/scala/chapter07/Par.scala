@@ -3,11 +3,14 @@ package chapter07
 object Par {
   case class Par[A](value: A)
 
-  def unit[A](a: => A): Par[A] = Par(a)
+  def unit[A](a: A): Par[A] = Par(a)
+  def lazyUnit[A](a: => A): Par[A] = fork(unit(a))
 
   def get[A](a: Par[A]): A = a.value
 
   def map2[A,B,C](a: Par[A], b: Par[B])(f: (A, B) => C): Par[C] = unit(f(get(a), get(b)))
+
+  def fork[A](a: => Par[A]): Par[A] = a
 }
 
 object Examples {
@@ -38,4 +41,11 @@ object Examples {
       map2(sum_2(l), sum_2(r))(_ + _)
     }
 
+  def sum_3(ints: IndexedSeq[Int]): Par[Int] =
+    if (ints.size <= 1)
+      unit(ints.headOption getOrElse 0)
+    else {
+      val (l, r) = ints.splitAt(ints.length / 2)
+      map2(fork(sum_2(l)), fork(sum_2(r)))(_ + _)
+    }
 }
