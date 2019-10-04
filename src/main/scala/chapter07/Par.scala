@@ -113,6 +113,19 @@ object Par {
     val abc = map2(ab, pc)((fc, c) => fc(c))
     map2(abc, pd)((fd, d) => fd(d))
   }
+
+  /*
+  map(y)(id) == y
+
+  map(map(y)(g))(f) == map(y)(f compose g)
+  map(map(y)(id))(f) == map(y)(f compose id)
+  map(y)(f) == map(y)(f compose id)
+  map(y)(f) == map(y)(f)
+
+  map(map(y)(g))(id) == map(y)(f compose id)
+  map(map(y)(g))(id) == map(y)(id compose g)
+  map(y)(g) == map(y)(g)
+  */
 }
 
 object Examples {
