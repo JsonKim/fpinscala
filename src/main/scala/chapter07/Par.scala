@@ -92,6 +92,11 @@ object Par {
 
   def sequence_2[A](ps: List[Par[A]]): Par[List[A]] = 
     map(sequenceBalanced(ps.toIndexedSeq))(_.toList)
+
+  def parMap[A,B](ps: List[A])(f: A => B): Par[List[B]] = fork {
+    val fbs: List[Par[B]] = ps.map(asyncF(f))
+    sequence(fbs)
+  }
 }
 
 object Examples {
