@@ -97,6 +97,11 @@ object Par {
     val fbs: List[Par[B]] = ps.map(asyncF(f))
     sequence(fbs)
   }
+
+  def parFilter[A](ps: List[A])(p: A => Boolean): Par[List[A]] = {
+    val pars: List[Par[List[A]]] = ps map asyncF((a: A) => if (p(a)) List(a) else Nil)
+    map(sequence(pars))(_.flatten)
+  }
 }
 
 object Examples {
