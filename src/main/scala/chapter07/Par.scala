@@ -64,6 +64,9 @@ object Par {
     es => es.submit(new Callable[A] {
       def call = a(es).get
     })
+
+  def asyncF[A,B](f: A => B): A => Par[B] =
+    a => lazyUnit(f(a))
 }
 
 object Examples {
