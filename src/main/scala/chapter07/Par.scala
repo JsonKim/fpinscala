@@ -30,11 +30,34 @@ object Par {
   // 병렬성 제어는 오직 fork함수만 담당한다는 설계상의 선택에 의해 f호출을 개별 논리적 쓰레드에서 평가하지 않는다.
   // f를 개별 쓰레드에서 평가하고 싶다면 fork(map2(a,b)(f)) 를 사용한다.
   def map2[A,B,C](a: Par[A], b: Par[B])(f: (A, B) => C): Par[C] =
-    (es: ExecutorService) => {
-      val af = a(es)
-      val bf = b(es)
-      UnitFuture(f(af.get, bf.get))
+    (es: ExecutorService) => Map2Future(a(es), b(es), f)
+
+  private case class Map2Future[A,B,C](a: Future[A], b: Future[B], f: (A, B) => C) extends Future[C] {
+    @volatile
+    var cache: Option[C] = None
+
+    def isDone: Boolean = cache.isDefined
+    def isCancelled: Boolean = a.isCancelled || b.isCancelled
+    def cancel(mayInterruptIfRunning: Boolean): Boolean =
+      a.cancel(mayInterruptIfRunning) ||b.cancel(mayInterruptIfRunning)
+    def get: C = get(Long.MaxValue, TimeUnit.NANOSECONDS)
+    def get(timeout: Long, unit: TimeUnit): C =
+      compute(TimeUnit.NANOSECONDS.convert(timeout, unit))
+
+    private def compute(timeoutInNanos: Long): C = cache match {
+      case Some(c) => c
+      case None => {
+        val aStart = System.nanoTime
+        val ar = a.get(timeoutInNanos, TimeUnit.NANOSECONDS)
+        val aEnd = System.nanoTime
+        val remain = timeoutInNanos - (aEnd - aStart)
+        val br = b.get(remain, TimeUnit.NANOSECONDS)
+        val ret = f(ar, br)
+        cache = Some(ret)
+        ret
+      }
     }
+  }
 
   // 이후에 run이 동시적으로 평가할 계산임을 표시. run에 강제 되어야 실제로 평가
   def fork[A](a: => Par[A]): Par[A] =
