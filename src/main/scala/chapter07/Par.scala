@@ -72,6 +72,26 @@ object Par {
 
   def asyncF[A,B](f: A => B): A => Par[B] =
     a => lazyUnit(f(a))
+
+  def sequence[A](ps: List[Par[A]]): Par[List[A]] =
+    ps.foldRight[Par[List[A]]](unit(Nil))((h, t) => map2(h, t)(_ :: _))
+
+  def sequence_1[A](ps: List[Par[A]]): Par[List[A]] = ps match {
+    case (h :: t) => map2(h, fork(sequence_1(t)))(_ :: _)
+    case (Nil) => unit(Nil)
+  }
+
+  def sequenceBalanced[A](as: IndexedSeq[Par[A]]): Par[IndexedSeq[A]] = fork {
+    if (as.isEmpty) unit(Vector())
+    else if (as.length == 1) map(as.head)(a => Vector(a))
+    else {
+      val (l, r) = as.splitAt(as.length / 2)
+      map2(sequenceBalanced(l), sequenceBalanced(r))(_ ++ _)
+    }
+  }
+
+  def sequence_2[A](ps: List[Par[A]]): Par[List[A]] = 
+    map(sequenceBalanced(ps.toIndexedSeq))(_.toList)
 }
 
 object Examples {
