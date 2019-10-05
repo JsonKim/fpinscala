@@ -140,6 +140,17 @@ object Par {
 
   def choiceMap[K,V](key: Par[K])(choices: Map[K,Par[V]]): Par[V] =
     es => run(es)(choices(run(es)(key).get))
+
+  // 이 함수의 서명은 m a -> (a -> m b) -> m b 가 된다.
+  // 즉 bind 이다.
+  def chooser[A,B](pa: Par[A])(choices: A => Par[B]): Par[B] =
+    es => run(es)(choices(run(es)(pa).get))
+
+  def choiceNViaChooser[A](n: Par[Int])(choices: List[Par[A]]): Par[A] =
+    chooser(n)(choices(_))
+
+  def choiceViaChooser[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
+    chooser(cond)(if (_) t else f)
 }
 
 object Examples {
