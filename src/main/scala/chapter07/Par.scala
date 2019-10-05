@@ -126,6 +126,17 @@ object Par {
   map(map(y)(g))(id) == map(y)(id compose g)
   map(y)(g) == map(y)(g)
   */
+
+  def choice[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
+    es =>
+      if (run(es)(cond).get) t(es)
+      else f(es)
+
+  def choiceN[A](n: Par[Int])(choices: List[Par[A]]): Par[A] =
+    es => run(es)(choices(run(es)(n).get))
+
+  def choiceViaChoiceN[A](cond: Par[Boolean])(t: Par[A], f: Par[A]) =
+    choiceN(map(cond)(if (_) 1 else 0))(List(f, t))
 }
 
 object Examples {
