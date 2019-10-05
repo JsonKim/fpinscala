@@ -137,6 +137,9 @@ object Par {
 
   def choiceViaChoiceN[A](cond: Par[Boolean])(t: Par[A], f: Par[A]) =
     choiceN(map(cond)(if (_) 1 else 0))(List(f, t))
+
+  def choiceMap[K,V](key: Par[K])(choices: Map[K,Par[V]]): Par[V] =
+    es => run(es)(choices(run(es)(key).get))
 }
 
 object Examples {
