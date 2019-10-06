@@ -1,4 +1,7 @@
 package chapter09
+import chapter08.Gen
+import chapter08.Prop
+import chapter08.Prop._
 
 trait Parsers[ParseError, Parser[+_]] { self =>
 
@@ -18,5 +21,13 @@ trait Parsers[ParseError, Parser[+_]] { self =>
     def or[B>:A](p2: Parser[B]): Parser[B] = self.or(p, p2)
     def many: Parser[List[A]] = self.many(p)
     def map[B](f: A => B): Parser[B] = self.map(p)(f)
+  }
+
+  object Laws {
+    def equal[A](p1: Parser[A], p2: Parser[A])(in: Gen[String]): Prop =
+      forAll(in)(s => run(p1)(s) == run(p2)(s))
+
+    def mapLaw[A](p: Parser[A])(in: Gen[String]): Prop =
+      equal(p, p.map(a => a))(in)
   }
 }
