@@ -8,6 +8,16 @@ import Gen._
 import Prop._
 import java.util.concurrent.{Executors,ExecutorService}
 
+object Ex3 {
+  trait Prop {
+    def check: Boolean
+
+    def &&(p2: Prop) = new Prop {
+      def check: Boolean = Prop.this.check && p2.check
+    }
+  }
+}
+
 /*
 The library developed in this chapter goes through several iterations. This file is just the
 shell, which you can fill in and modify while working through the chapter.
