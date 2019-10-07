@@ -4,7 +4,10 @@ import chapter08.Prop
 import chapter08.Prop._
 import scala.util.matching.Regex
 
-trait Parsers[ParseError, Parser[+_]] { self =>
+trait Parsers[Parser[+_]] { self =>
+  type Parser[+A] = String => Either[ParseError, A]
+
+  case class ParseError(stack: List[(Location, String)])
 
   def run[A](p: Parser[A])(input: String): Either[ParseError,A]
 
@@ -13,7 +16,10 @@ trait Parsers[ParseError, Parser[+_]] { self =>
 
   def or[A](p1: Parser[A], p2: => Parser[A]): Parser[A]
 
-  implicit def string(s: String): Parser[String]
+  implicit def string(s: String): Parser[String] =
+    (input: String) =>
+      if (input.startsWith(s)) Right(s)
+      else Left(Location(input).toError("Expected: " + s))
 
   implicit def operators[A](p: Parser[A]) = ParserOps[A](p)
 
@@ -58,6 +64,9 @@ trait Parsers[ParseError, Parser[+_]] { self =>
       case -1 => offset + 1
       case lineStart => offset - lineStart
     }
+
+    def toError(msg: String): ParseError =
+      ParseError(List((this, msg)))
   }
 
   def errorLocation(e: ParseError): Location
