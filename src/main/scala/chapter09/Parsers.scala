@@ -48,6 +48,19 @@ trait Parsers[ParseError, Parser[+_]] { self =>
 
   implicit def regex(r: Regex): Parser[String]
 
+  def label[A](msg: String)(p: Parser[A]): Parser[A]
+
+  case class Location(input: String, offset: Int = 0) {
+    lazy val line = input.slice(0, offset+1).count(_ == '\n') + 1
+    lazy val col = input.slice(0, offset+1).lastIndexOf('\n') match {
+      case -1 => offset + 1
+      case lineStart => offset - lineStart
+    }
+  }
+
+  def errorLocation(e: ParseError): Location
+  def errorMessage(e: ParseError): String
+
   case class ParserOps[A](p: Parser[A]) {
     def |[B>:A](p2: => Parser[B]): Parser[B] = self.or(p, p2)
     def or[B>:A](p2: => Parser[B]): Parser[B] = self.or(p, p2)
