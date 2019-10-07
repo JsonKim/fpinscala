@@ -5,9 +5,31 @@ import chapter08.Prop._
 import scala.util.matching.Regex
 
 trait Parsers[Parser[+_]] { self =>
-  type Parser[+A] = String => Either[ParseError, A]
 
-  case class ParseError(stack: List[(Location, String)])
+  type Parser[+A] = Location => Result[A]
+
+  case class ParseError(stack: List[(Location, String)]) {
+    def push(loc: Location, msg: String): ParseError =
+      copy(stack = (loc,msg) :: stack)
+
+    def label[A](s: String): ParseError =
+      ParseError(latestLoc.map((_, s)).toList)
+
+    def latestLoc: Option[Location] =
+      latest map (_._1)
+
+    def latest: Option[(Location, String)] =
+      stack.lastOption
+  }
+
+  trait Result[+A] {
+    def mapError(f: ParseError => ParseError): Result[A] = this match {
+      case Failure(e) => Failure(f(e))
+      case _ => this
+    }
+  }
+  case class Success[+A](get: A, charConsumed: Int) extends Result[A]
+  case class Failure[+A](get: ParseError) extends Result[A]
 
   def run[A](p: Parser[A])(input: String): Either[ParseError,A]
 
@@ -17,9 +39,9 @@ trait Parsers[Parser[+_]] { self =>
   def or[A](p1: Parser[A], p2: => Parser[A]): Parser[A]
 
   implicit def string(s: String): Parser[String] =
-    (input: String) =>
-      if (input.startsWith(s)) Right(s)
-      else Left(Location(input).toError("Expected: " + s))
+    (loc: Location) =>
+      if (loc.input.startsWith(s, loc.offset)) Success(s, loc.offset + s.length)
+      else Failure(loc.toError("Expected: " + s))
 
   implicit def operators[A](p: Parser[A]) = ParserOps[A](p)
 
@@ -54,9 +76,11 @@ trait Parsers[Parser[+_]] { self =>
 
   implicit def regex(r: Regex): Parser[String]
 
-  def label[A](msg: String)(p: Parser[A]): Parser[A]
+  def label[A](msg: String)(p: Parser[A]): Parser[A] =
+    s => p(s).mapError(_.label(msg))
 
-  def scope[A](msg: String)(p: Parser[A]): Parser[A]
+  def scope[A](msg: String)(p: Parser[A]): Parser[A] =
+    s => p(s).mapError(_.push(s, msg))
 
   case class Location(input: String, offset: Int = 0) {
     lazy val line = input.slice(0, offset+1).count(_ == '\n') + 1
