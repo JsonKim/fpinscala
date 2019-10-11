@@ -70,7 +70,7 @@ object Monoid {
     ???
 
   def foldMap[A, B](as: List[A], m: Monoid[B])(f: A => B): B =
-    ???
+    as.foldRight(m.zero)((x, acc) => m.op(f(x), acc))
 
   def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B =
     ???
