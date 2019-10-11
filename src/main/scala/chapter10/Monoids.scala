@@ -21,13 +21,25 @@ object Monoid {
     val zero = Nil
   }
 
-  val intAddition: Monoid[Int] = ???
+  val intAddition: Monoid[Int] = new Monoid[Int] {
+    def op(x: Int, y: Int): Int = x + y
+    val zero = 0
+  }
 
-  val intMultiplication: Monoid[Int] = ???
+  val intMultiplication: Monoid[Int] = new Monoid[Int] {
+    def op(x: Int, y: Int): Int = x * y
+    val zero = 1
+  }
 
-  val booleanOr: Monoid[Boolean] = ???
+  val booleanOr: Monoid[Boolean] = new Monoid[Boolean] {
+    def op(x: Boolean, y: Boolean): Boolean = x || y
+    def zero = true
+  }
 
-  val booleanAnd: Monoid[Boolean] = ???
+  val booleanAnd: Monoid[Boolean] = new Monoid[Boolean] {
+    def op(x: Boolean, y: Boolean): Boolean = x && y
+    def zero = false
+  }
 
   def optionMonoid[A]: Monoid[Option[A]] = ???
 
