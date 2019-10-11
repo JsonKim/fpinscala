@@ -32,6 +32,16 @@ trait Parsers[Parser[+_]] { self =>
       case Failure(e, true) => Failure(e, false)
       case _ => this
     }
+
+    def addCommit(isCommited: Boolean): Result[A] = this match {
+      case Failure(e, c) => Failure(e, c || isCommited)
+      case _ => this
+    }
+
+    def advanceSuccess(n: Int): Result[A] = this match {
+      case Success(a, m) => Success(a, m+n)
+      case _ => this
+    }
   }
   case class Success[+A](get: A, charConsumed: Int) extends Result[A]
   case class Failure[+A](get: ParseError, isCommited: Boolean) extends Result[A]
@@ -84,7 +94,13 @@ trait Parsers[Parser[+_]] { self =>
   def map2[A,B,C](p1: Parser[A], p2: => Parser[B])(f: (A, B) => C): Parser[C] =
     p1.flatMap(a => p2.map(b => f(a, b)))
 
-  def flatMap[A,B](p: Parser[A])(f: A => Parser[B]): Parser[B]
+  def flatMap[A,B](p: Parser[A])(f: A => Parser[B]): Parser[B] =
+    s => p(s) match {
+      case Success(a, n) => f(a)(s.advanceBy(n))
+                              .addCommit(n != 0)
+                              .advanceSuccess(n)
+      case Failure(e, c) => Failure(e, c)
+    }
 
   implicit def regex(r: Regex): Parser[String]
 
@@ -103,6 +119,9 @@ trait Parsers[Parser[+_]] { self =>
 
     def toError(msg: String): ParseError =
       ParseError(List((this, msg)))
+
+    def advanceBy(n: Int): Location =
+      copy(offset = offset + n)
   }
 
   def errorLocation(e: ParseError): Location
