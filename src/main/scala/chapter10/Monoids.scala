@@ -67,13 +67,29 @@ object Monoid {
   def trimMonoid(s: String): Monoid[String] = ???
 
   def concatenate[A](as: List[A], m: Monoid[A]): A =
-    ???
+    as.foldRight(m.zero)(m.op)
 
   def foldMap[A, B](as: List[A], m: Monoid[B])(f: A => B): B =
     as.foldRight(m.zero)((x, acc) => m.op(f(x), acc))
 
-  def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B =
-    ???
+  def foldMap_1[A, B](as: List[A], m: Monoid[B])(f: A => B): B =
+    concatenate(as.map(f), m)
+
+  def foldMap_2[A, B](as: List[A], m: Monoid[B])(f: A => B): B =
+    as.map(f).foldRight(m.zero)(m.op)
+
+  def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B = {
+    // 리스트의 각 원소에 2항 함수인 f를 map하여 단항 함수의 리스트로 변환한다.
+    // 이때 적용되는 f: (A, B) => B를 커링하여 적용하면 map이 적용된 리스트의
+    // 원소들은 endofunction인 B => B의 타입이 되기 때문에 endomonoid에 의해서
+    // 합성이 가능해진다.
+
+    // foldMap(["1","2","3"], endoMonoid[B])(s => n => toInt(s) + n)
+    // ["1","2","3"].map(s => n => toInt(s) + n).foldRight(a => a)(f => g => x => f(g(x)))
+    // [n => toInt("1") + n, n => toInt("2") + n, n => toInt("2") + n].foldRight(a => a)(f => g => x => f(g(x)))
+    val m = foldMap(as, endoMonoid[B])(x => (y => f(x, y)))
+    m(z)
+  }
 
   def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B): B =
     ???
