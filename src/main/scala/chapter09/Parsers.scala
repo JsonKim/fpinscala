@@ -24,24 +24,36 @@ trait Parsers[Parser[+_]] { self =>
 
   trait Result[+A] {
     def mapError(f: ParseError => ParseError): Result[A] = this match {
-      case Failure(e) => Failure(f(e))
+      case Failure(e, c) => Failure(f(e), c)
+      case _ => this
+    }
+
+    def uncommit: Result[A] = this match {
+      case Failure(e, true) => Failure(e, false)
       case _ => this
     }
   }
   case class Success[+A](get: A, charConsumed: Int) extends Result[A]
-  case class Failure[+A](get: ParseError) extends Result[A]
+  case class Failure[+A](get: ParseError, isCommited: Boolean) extends Result[A]
 
   def run[A](p: Parser[A])(input: String): Either[ParseError,A]
 
   def char(c: Char): Parser[Char] =
     string(c.toString) map (_.charAt(0))
 
-  def or[A](p1: Parser[A], p2: => Parser[A]): Parser[A]
+  def or[A](p1: Parser[A], p2: => Parser[A]): Parser[A] =
+    s => p1(s) match {
+      case Failure(e, false) => p2(s)
+      case r => r
+    }
+
+  def attemp[A](p: Parser[A]): Parser[A] =
+    s => p(s).uncommit
 
   implicit def string(s: String): Parser[String] =
     (loc: Location) =>
       if (loc.input.startsWith(s, loc.offset)) Success(s, loc.offset + s.length)
-      else Failure(loc.toError("Expected: " + s))
+      else Failure(loc.toError("Expected: " + s), true)
 
   implicit def operators[A](p: Parser[A]) = ParserOps[A](p)
 
