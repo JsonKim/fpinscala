@@ -121,11 +121,17 @@ object Monoid {
   case class Stub(chars: String) extends WC
   case class Part(lStub: String, words: Int, rStub: String) extends WC
 
-  def par[A](m: Monoid[A]): Monoid[Par[A]] = 
-    ???
+  import chapter07.Nonblocking._
+
+  def par[A](m: Monoid[A]): Monoid[Par[A]] = new Monoid[Par[A]] {
+    def zero = Par.unit(m.zero)
+    def op(x: Par[A], y: Par[A]) = Par.map2(x, y)(m.op)
+  }
 
   def parFoldMap[A,B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B] = 
-    ???
+    Par.flatMap(Par.parMap(v)(f)) { bs =>
+      foldMapV(bs, par(m))(b => Par.lazyUnit(b))
+    }
 
   val wcMonoid: Monoid[WC] = ???
 
