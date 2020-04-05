@@ -159,7 +159,7 @@ object Stream {
       case _ => None
     }
 
-  def zipWith[A,B](l: Stream[A], r: Stream[A])(f: (A, A) => B): Stream[B] =
+  def zipWith[A,B,C](l: Stream[A], r: Stream[B])(f: (A, B) => C): Stream[C] =
     unfold((l,r)) {
       case (Cons(h1, t1), Cons(h2, t2)) => Some(f(h1(), h2()), (t1(), t2()))
       case _ => None
