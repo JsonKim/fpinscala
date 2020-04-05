@@ -114,8 +114,16 @@ object Monoid {
     }
   }
 
-  def ordered(ints: IndexedSeq[Int]): Boolean =
-    ???
+  def ordered(ints: IndexedSeq[Int]): Boolean = {
+    val mon = new Monoid[(Int, Boolean)] {
+      def op(o1: (Int, Boolean), o2: (Int, Boolean)) =
+        (o1, o2) match {
+          case ((x1, p), (x2, q)) => (x1 min x2, p && q && x1 <= x2)
+        }
+      val zero = (Int.MinValue, true)
+    }
+    foldMapV(ints, mon)(i => (i, true))._2
+  }
 
   sealed trait WC
   case class Stub(chars: String) extends WC
