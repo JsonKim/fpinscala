@@ -84,5 +84,14 @@ object Nonblocking {
       val fbs: List[Par[B]] = ps.map(asyncF(f))
       sequence(fbs)
     }
+
+    def parMap[A,B](as: IndexedSeq[A])(f: A => B): Par[IndexedSeq[B]] =
+      sequenceBalanced(as.map(asyncF(f)))
+
+    def flatMap[A,B](p: Par[A])(f: A => Par[B]): Par[B] =
+      es => new Future[B] {
+        def apply(cb: B => Unit): Unit =
+          p(es)(a => f(a)(es)(cb))
+      }
   }
 }
