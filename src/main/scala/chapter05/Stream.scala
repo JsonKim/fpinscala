@@ -165,6 +165,10 @@ object Stream {
       case _ => None
     }
 
+  // special case of `zipWith`
+  def zip[A,B](s1: Stream[A], s2: Stream[B]): Stream[(A,B)] =
+    zipWith(s1, s2)((_,_))
+
   def zipAll[A,B](s1: Stream[A], s2: Stream[B]): Stream[(Option[A], Option[B])] =
     unfold(s1, s2) {
       case (Cons(h1, t1), Cons(h2, t2)) => Some((Some(h1()), Some(h2())), (t1(), t2()))
