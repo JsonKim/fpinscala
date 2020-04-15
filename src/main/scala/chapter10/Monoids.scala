@@ -173,7 +173,10 @@ object Monoid {
   }
 
   def functionMonoid[A,B](B: Monoid[B]): Monoid[A => B] =
-    ???
+    new Monoid[A => B] {
+      def op(f1: A => B, f2: A => B): A => B = a => B.op(f1(a), f2(a))
+      def zero = _ => B.zero
+    }
 
   def mapMergeMonoid[K,V](V: Monoid[V]): Monoid[Map[K, V]] =
     new Monoid[Map[K, V]] {
