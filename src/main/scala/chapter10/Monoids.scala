@@ -196,7 +196,7 @@ trait Foldable[F[_]] {
     foldLeft(as)(m.zero)(m.op)
 
   def toList[A](as: F[A]): List[A] =
-    ???
+    foldRight(as)(List[A]())((a, acc) => a :: acc)
 }
 
 object ListFoldable extends Foldable[List] {
