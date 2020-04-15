@@ -187,8 +187,11 @@ object Monoid {
       def zero = Map[K, V]();
     }
 
-  def bag[A](as: IndexedSeq[A]): Map[A, Int] =
-    ???
+  def bag[A](as: IndexedSeq[A]): Map[A, Int] = {
+    val M = mapMergeMonoid[A, Int](intAddition)
+    as.foldLeft(M.zero)((acc, a) => M.op(acc, Map(a -> 1)))
+    // foldMapV(as, M)(a => Map(a -> 1))
+  }
 }
 
 trait Foldable[F[_]] {
