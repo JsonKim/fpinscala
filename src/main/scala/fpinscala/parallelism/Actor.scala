@@ -1,4 +1,4 @@
-package chapter07
+package fpinscala.parallelism
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import java.util.concurrent.{Callable,ExecutorService}
