@@ -49,6 +49,9 @@ trait Monad[M[_]] extends Functor[M] {
   def replicateM_2[A](n: Int, ma: M[A]): M[List[A]] =
     sequence(List.fill(n)(ma))
 
+  // replicate는 주어진 모나드의 맥락을 유지한다.
+  // 만약 Option의 None이면 그대로 None이 유지 되고, 5개의 List가 주어진다면 5개의 List는 유지 된다.
+
   def compose[A,B,C](f: A => M[B], g: B => M[C]): A => M[C] = ???
 
   // Implement in terms of `compose`:
