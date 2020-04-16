@@ -92,7 +92,14 @@ object Monad {
       ma flatMap f
   }
 
-  def stateMonad[S] = ???
+  // class를 선언하고 내부에
+  // type StateS[A] = State[S,A]
+  // 를 만들어서 쓸 수도 있지만, 아래와 같이 type lambda를 사용하면 inline으로 처리할 수 있다.
+  def stateMonad[S] = new Monad[({type f[x] = State[S,x]})#f] {
+    def unit[A](a: => A): State[S,A] = State.unit(a)
+    def flatMap[A, B](ma: State[S,A])(f: A => State[S,B]): State[S,B] =
+      ma flatMap f
+  } 
 
   val idMonad: Monad[Id] = ???
 
