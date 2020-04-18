@@ -82,7 +82,11 @@ trait Monad[M[_]] extends Functor[M] {
   // a # f   >=> unit  == f a ==  a # unit   >=> f
   //     f a >>= unit  == f a ==      unit a >>= f
 
-  def join[A](mma: M[M[A]]): M[A] = ???
+  // bind :: m  a    -> (   a  -> m b) -> m b
+  // bind :: m (m a) -> ((m a) -> m a) -> m a
+  // join :: m (m a) -> m a
+  // join mma = mma >>= (\ma -> id ma)
+  def join[A](mma: M[M[A]]): M[A] = flatMap(mma)(_)
 
   // Implement in terms of `join`:
   def __flatMap[A,B](ma: M[A])(f: A => M[B]): M[B] = ???
