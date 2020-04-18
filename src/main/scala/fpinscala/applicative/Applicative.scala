@@ -23,6 +23,11 @@ trait Applicative[F[_]] extends Functor[F] {
     apply(applied)(fb)
   }
 
+  // 연습문제 12.3
+  // map3, map4 ...은 주어진 함수를 커링해서 lifting 한 다음 apply를 인자만큼 반복해서 적용하면 된다.
+  // 또는 첫 번째 인자만 map을 적용한 후 나머지 인자에 대해서만 apply를 반복해도 된다.
+  // 이것이 동일한 구현임은 map2의 주석으로 대신한다.
+
   def apply[A,B](fab: F[A => B])(fa: F[A]): F[B] =
     map2(fab, fa)((f, a) => f(a))
 
