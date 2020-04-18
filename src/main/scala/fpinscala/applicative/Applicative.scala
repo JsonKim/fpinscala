@@ -48,9 +48,23 @@ trait Applicative[F[_]] extends Functor[F] {
   def factor[A,B](fa: F[A], fb: F[B]): F[(A,B)] =
     map2(fa, fb)((_, _))
 
-  def product[G[_]](G: Applicative[G]): Applicative[({type f[x] = (F[x], G[x])})#f] = ???
+  def product[G[_]](G: Applicative[G]): Applicative[({type f[x] = (F[x], G[x])})#f] = {
+    val self = this
+    new Applicative[({type f[x] = (F[x], G[x])})#f] {
+      def unit[A](a: => A): (F[A], G[A]) = (self.unit(a), G.unit(a))
+      override def apply[A,B](fp: (F[A => B], G[A => B]))(p: (F[A], G[A])): (F[B], G[B]) =
+        (self.apply(fp._1)(p._1), G.apply(fp._2)(p._2))
+    }
+  }
 
-  def compose[G[_]](G: Applicative[G]): Applicative[({type f[x] = F[G[x]]})#f] = ???
+  def compose[G[_]](G: Applicative[G]): Applicative[({type f[x] = F[G[x]]})#f] = {
+    val self = this
+    new Applicative[({type f[x] = F[G[x]]})#f] {
+      def unit[A](a: => A): F[G[A]] = self.unit(G.unit(a))
+      override def map2[A,B,C](fa: F[G[A]], fb: F[G[B]])(f: (A, B) => C): F[G[C]] =
+        self.map2(fa, fb)((a,b) => G.map2(a,b)(f))
+    }
+  }
 
   def sequenceMap[K,V](ofa: Map[K,F[V]]): F[Map[K,V]] = ???
 }
