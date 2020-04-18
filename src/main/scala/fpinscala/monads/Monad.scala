@@ -68,11 +68,19 @@ trait Monad[M[_]] extends Functor[M] {
   def _flatMap[A,B](ma: M[A])(f: A => M[B]): M[B] =
     compose((_: Unit) => ma, f)(())
 
+  // (>=>) :: forall m a b c. Monad m => (a -> m b) -> (b -> m c) -> (a -> m c)
+  // (>=>) f g= \a -> f a >>= g
+
   //       (f         >=> g)   >=> h  ==        f   >=> (      g   >=> h)
   // \a -> (      f   >=> g) a >>= h  ==        f   >=> (\b -> g b >>= h)
   // \a -> (\b -> f b >>= g) a >>= h  ==  \a -> f a >>= (\b -> g b >>= h)
   //       (\a -> f a >>= g)   >>= h  ==  \a -> f a >>= (\b -> g b >>= h)
   //       (        x >>= g)   >>= h  ==          x >>= (\b -> g b >>= h)
+
+  // 항등법칙
+  //     f   >=> unit  == f   ==      unit   >=> f
+  // a # f   >=> unit  == f a ==  a # unit   >=> f
+  //     f a >>= unit  == f a ==      unit a >>= f
 
   def join[A](mma: M[M[A]]): M[A] = ???
 
