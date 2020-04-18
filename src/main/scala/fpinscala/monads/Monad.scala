@@ -86,7 +86,7 @@ trait Monad[M[_]] extends Functor[M] {
   // bind :: m (m a) -> ((m a) -> m a) -> m a
   // join :: m (m a) -> m a
   // join mma = mma >>= (\ma -> id ma)
-  def join[A](mma: M[M[A]]): M[A] = flatMap(mma)(_)
+  def join[A](mma: M[M[A]]): M[A] = flatMap(mma)(a => a)
 
   // Implement in terms of `join`:
   def __flatMap[A,B](ma: M[A])(f: A => M[B]): M[B] =
@@ -139,7 +139,7 @@ object Monad {
   // type StateS[A] = State[S,A]
   // 를 만들어서 쓸 수도 있지만, 아래와 같이 type lambda를 사용하면 inline으로 처리할 수 있다.
   def stateMonad[S] = new Monad[({type f[x] = State[S,x]})#f] {
-    def unit[A](a: => A): State[S,A] = State.unit(a)
+    def unit[A](a: => A): State[S,A] = State.unit(a) // State(s => (a, s))
     def flatMap[A, B](ma: State[S,A])(f: A => State[S,B]): State[S,B] =
       ma flatMap f
   } 
@@ -154,8 +154,8 @@ object Monad {
 }
 
 case class Id[A](value: A) {
-  def map[B](f: A => B): Id[B] = Id(f(a))
-  def flatMap[B](f: A => Id[B]): Id[B] = f(a)
+  def map[B](f: A => B): Id[B] = Id(f(value))
+  def flatMap[B](f: A => Id[B]): Id[B] = f(value)
 }
 
 object Reader {
