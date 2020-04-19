@@ -81,6 +81,18 @@ trait Monad[F[_]] extends Applicative[F] {
 
   override def apply[A,B](mf: F[A => B])(ma: F[A]): F[B] =
     flatMap(mf)(f => map(ma)(a => f(a)))
+
+  def composeM[G[_]](G: Monad[G]): Monad[({type f[x] = F[G[x]]})#f] = {
+    val self = this
+    new Monad[({type f[x] = F[G[x]]})#f] {
+      def unit[A](a: => A): F[G[A]] = self.unit(G.unit(a))
+
+      // G.flatMap은 G[B]를 리턴하야 하나, f는 F[G[B]]를 리턴하기 때문에 f를 G.flatMap에 넘길 수 없다.
+      // 비슷하게 self.flatMap에는 G[A]가 전달되기 때문에 f의 매개변수로 사용이 불가능하다.
+      // 답안에 따르면 이를 구현하기 위해서는 distributive law가 필요하나 이것은 monad의 interface가 아니라고 한다.
+      // override def flatMap[A, B](ma: F[G[A]])(f: A => F[G[B]]): F[G[B]] = self.flatMap(ma)(ga => G.flatMap(ga)(a => ???))
+    }
+  }
 }
 
 object Monad {
