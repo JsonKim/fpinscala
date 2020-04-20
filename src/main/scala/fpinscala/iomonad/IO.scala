@@ -224,6 +224,15 @@ object IO3 {
       Suspend(PrintLine(line))
   }
 
+  val f1: Free[Console, Option[String]] = for {
+    _ <- Console.printLn("I can only interact with the console.")
+    ln <- Console.readLn
+  } yield ln
+
+  val f2: Free[Console, Option[String]] =
+    Console.printLn("I can only interact with the console.").flatMap(_ =>
+      Console.readLn.map(ln => ln))
+
   /*
   How do we actually _run_ a `ConsoleIO` program? We don't have a `Monad[Console]`
   for calling `run`, and we can't use `runTrampoline` either since we have `Console`,
