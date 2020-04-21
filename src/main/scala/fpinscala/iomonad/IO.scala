@@ -377,7 +377,13 @@ object IO3 {
 
   def read(file: AsynchronousFileChannel,
            fromPosition: Long,
-           numBytes: Int): Par[Either[Throwable, Array[Byte]]] = ???
+           numBytes: Int): Par[Either[Throwable, Array[Byte]]] =
+    Par.async[Either[Throwable,Array[Byte]]] { cb =>
+      // 파일 읽기에 성공하면 cb(Right(buffer))
+      // 실패하면 cb(Left(error))
+      // 를 호출한다.
+      ???
+    }
 
   // Provides the syntax `Async { k => ... }` for asyncronous IO blocks.
   def Async[A](cb: (A => Unit) => Unit): IO[A] =
