@@ -324,7 +324,11 @@ object SimpleStreamTransducers {
     /*
      * Exercise 2: Implement `count`.
      */
-    def count[I]: Process[I,Int] = ???
+    def count[I]: Process[I,Int] = {
+      def go(acc: Int): Process[I,Int] =
+        await(_ => emit(1+acc, go(1+acc)))
+      go(0)
+    }
 
     /* For comparison, here is an explicit recursive implementation. */
     def count2[I]: Process[I,Int] = {
@@ -332,6 +336,9 @@ object SimpleStreamTransducers {
         await((i: I) => emit(n+1, go(n+1)))
       go(0)
     }
+
+    def count_1[I]: Process[I,Int] =
+      lift((_: I) => 1.0) |> sum |> lift(_.toInt)
 
     /*
      * Exercise 3: Implement `mean`.
