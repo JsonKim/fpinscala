@@ -104,7 +104,13 @@ object SimpleStreamTransducers {
     def apply(s: Stream[I]): Stream[O] = this match {
       case Halt() => Stream()
       case Await(recv) => s match {
-        case h #:: t => recv(Some(h))(t)
+        case h #:: t => {
+          val p = recv(Some(h)) // repeat이 수행 단게중 리턴하는 case는 Emit(f(h), this) 가 된다.
+          // recv가 Halt를 리턴하면 종료한다.
+          // Await을 리턴하면 결과값을 skip하고 다음 값을 처리한다.
+          // Emit을 리턴하면 값을 방출하고 다음 상태에 따라 행동 여부를 결정한다.
+          p(t)
+        }
         case xs => recv(None)(xs) // Stream is empty
       }
       case Emit(h,t) => h #:: t(s)
