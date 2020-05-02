@@ -413,7 +413,20 @@ object SimpleStreamTransducers {
      * We choose to emit all intermediate values, and not halt.
      * See `existsResult` below for a trimmed version.
      */
-    def exists[I](f: I => Boolean): Process[I,Boolean] = ???
+    def exists[I](f: I => Boolean): Process[I,Boolean] = lift(f) |> any
+
+    def existsResult[I](f: I => Boolean) =
+      exists(f) |> takeThrough(!_) |> dropWhile(!_) |> echo.orElse(emit(false))
+
+    def any: Process[Boolean,Boolean] =
+      loop(false)((b, s) => (s || b, s || b))
+
+    // ++로 된 구현은 f에서 실패한 원소가 아닌 다음 원소를 소비하는 버그가 있다.
+    // https://github.com/fpinscala/fpinscala/pull/563 참고
+    def takeThrough[I](f: I => Boolean): Process[I,I] = await(i =>
+      if (f(i)) emit(i, takeThrough(f))
+      else emit(i)
+    )
 
     /* Awaits then emits a single value, then halts. */
     def echo[I]: Process[I,I] = await(i => emit(i))
