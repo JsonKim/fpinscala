@@ -393,11 +393,12 @@ object SimpleStreamTransducers {
       case (sum, count) => sum / count
     }
 
+    // Stream을 소비하기 전에 주어진 원소를 먼저 처리한다.
     def feed[A,B](oa: Option[A])(p: Process[A,B]): Process[A,B] =
       p match {
         case Halt() => p
-        case Emit(h,t) => Emit(h, feed(oa)(t))
-        case Await(recv) => recv(oa)
+        case Emit(h,t) => Emit(h, feed(oa)(t)) // h를 방출 후 다음 원소를 처리하기전에 oa를 먼저 처리한다.
+        case Await(recv) => recv(oa) // stream을 읽기전에 oa부터 처리한다.
       }
 
     /*
