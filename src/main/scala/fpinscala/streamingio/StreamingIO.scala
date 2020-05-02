@@ -462,6 +462,11 @@ object SimpleStreamTransducers {
 
     def toCelsius(fahrenheit: Double): Double =
       (5.0 / 9.0) * (fahrenheit - 32.0)
+
+    def convertFahrenheit: Process[String,String] =
+      filter((line: String) => !line.startsWith("#")) |>
+      filter((line: String) => line.trim.nonEmpty) |>
+      lift(line => toCelsius(line.toDouble).toString)
   }
 }
 
@@ -823,10 +828,13 @@ object GeneralizedStreamTransducers {
         { src => eval_ { IO(src.close) } }
 
     /* Exercise 11: Implement `eval`, `eval_`, and use these to implement `lines`. */
-    def eval[F[_],A](a: F[A]): Process[F,A] = ???
+    def eval[F[_],A](a: F[A]): Process[F,A] = await(a) {
+      case Right(a) => Emit(a, Halt(End))
+      case Left(err) => Halt(err)
+    }
 
     /* Evaluate the action purely for its effects. */
-    def eval_[F[_],A,B](a: F[A]): Process[F,B] = ???
+    def eval_[F[_],A,B](a: F[A]): Process[F,B] = eval(a).drain[B]
 
     /* Helper function with better type inference. */
     def evalIO[A](a: IO[A]): Process[IO,A] =
