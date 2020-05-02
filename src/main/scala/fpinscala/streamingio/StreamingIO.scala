@@ -214,7 +214,7 @@ object SimpleStreamTransducers {
     /*
      * Exercise 6: Implement `zipWithIndex`.
      */
-    def zipWithIndex: Process[I,(O,Int)] = ???
+    def zipWithIndex: Process[I,(O,Int)] = zip(this, (count.map(_ - 1)))
 
     /* Add `p` to the fallback branch of this process */
     def orElse(p: Process[I,O]): Process[I,O] = this match {
