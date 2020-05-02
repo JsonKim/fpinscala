@@ -380,6 +380,18 @@ object SimpleStreamTransducers {
      * allow for the definition of `mean` in terms of `sum` and
      * `count`?
      */
+    def zip[I,O1,O2](p1: Process[I,O1], p2: Process[I,O2]): Process[I,(O1,O2)] =
+      (p1, p2) match {
+        case (Halt(), _) => Halt()
+        case (_, Halt()) => Halt()
+        case (Emit(o1, t1), Emit(o2, t2)) => Emit((o1, o2), zip(t1, t2))
+        case (Await(recv), _) => Await((i: Option[I]) => zip(recv(i), feed(i)(p2)))
+        case (_, Await(recv)) => Await((i: Option[I]) => zip(feed(i)(p1), recv(i)))
+      }
+
+    def mean2: Process[Double,Double] = zip[Double,Double,Int](sum, count).map {
+      case (sum, count) => sum / count
+    }
 
     def feed[A,B](oa: Option[A])(p: Process[A,B]): Process[A,B] =
       p match {
